@@ -24,6 +24,7 @@ import android.view.View;
 
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -106,11 +107,38 @@ public class PlayerActivity extends AppCompatActivity {
   }
 
   // we start with progressive media source for the Mp3 file on the internet
+
+  /**
+   *
+   * @param uri  contains the URI of the media file
+   * @return
+   * DefaultDataSourceFactory, specifies our context and user-agent-string which will be used when making
+   * the HTTP request for the media file.
+   * we then pass dataSourceFactory to ProgressiveMediaSource.Factory, which is a factory for creating a progressive media
+   *
+   * Multimedia data is usually stored using a container format,
+   * such as MP4 or Ogg. Before the video and/or audio data can be played it must be
+   * extracted from the container. ExoPlayer is capable of extracting data from many different
+   * container formats using a variety of Extractor classes.
+   *
+   *
+   * playlist can be created using a ConcatenatingMediaSource
+   */
   private MediaSource buildMediaSource(Uri uri) {
+    // These factories are used to construct two media sources below
     DataSource.Factory dataSourceFactory =
             new DefaultDataSourceFactory(this, "exoplayer-codelab");
-    return new ProgressiveMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(uri);
+    ProgressiveMediaSource.Factory mediaSourceFactory =
+            new ProgressiveMediaSource.Factory(dataSourceFactory);
+
+    // Create a media source using the supplied URI
+    MediaSource mediaSource1 = mediaSourceFactory.createMediaSource(uri);
+
+    // Additionally create a media source using an MP3
+    Uri audioUri = Uri.parse(getString(R.string.media_url_mp3));
+    MediaSource mediaSource2 = mediaSourceFactory.createMediaSource(audioUri);
+
+    return new ConcatenatingMediaSource(mediaSource1, mediaSource2);
   }
 
   @SuppressLint("InlinedApi")
