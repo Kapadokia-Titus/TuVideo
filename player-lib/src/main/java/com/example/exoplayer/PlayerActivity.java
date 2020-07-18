@@ -105,6 +105,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
   }
 
+  // we start with progressive media source for the Mp3 file on the internet
   private MediaSource buildMediaSource(Uri uri) {
     DataSource.Factory dataSourceFactory =
             new DefaultDataSourceFactory(this, "exoplayer-codelab");
