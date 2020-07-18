@@ -44,6 +44,9 @@ public class PlayerActivity extends AppCompatActivity {
   private boolean playWhenReady = true;
   private int currentWindow = 0;
   private long playbackPosition = 0;
+  private PlaybackStateListener playbackStateListener;
+
+  private static final String TAG = PlayerActivity.class.getName();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,7 @@ public class PlayerActivity extends AppCompatActivity {
     setContentView(R.layout.activity_player);
 
     playerView = findViewById(R.id.video_view);
+    playbackStateListener = new PlaybackStateListener();
   }
 
   @Override
@@ -93,6 +97,7 @@ public class PlayerActivity extends AppCompatActivity {
 //  we pass our trackSelector to our builder so that it is used when building the SimpleExoPlayer instance.
   private void initializePlayer() {
 
+
     if (player == null) {
       DefaultTrackSelector trackSelector = new DefaultTrackSelector(this);
       trackSelector.setParameters(
@@ -105,8 +110,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     // change our URI to one which points to a DASH media source:
     Uri uri = Uri.parse(getString(R.string.media_url_dash));
+    player.addListener(playbackStateListener);
     MediaSource mediaSource = buildMediaSource(uri);
-
     player.setPlayWhenReady(playWhenReady);
     player.seekTo(currentWindow, playbackPosition);
     player.prepare(mediaSource, false, false);
@@ -117,6 +122,7 @@ public class PlayerActivity extends AppCompatActivity {
       playbackPosition = player.getCurrentPosition();
       currentWindow = player.getCurrentWindowIndex();
       playWhenReady = player.getPlayWhenReady();
+      player.removeListener(playbackStateListener);
       player.release();
       player = null;
     }
