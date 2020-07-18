@@ -27,6 +27,8 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.source.dash.DashMediaSource;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
@@ -84,11 +86,25 @@ public class PlayerActivity extends AppCompatActivity {
     }
   }
 
+//  using adaptive streaming
+  //a DefaultTrackSelector  is responsible for choosing tracks in the media source.
+  // then trackSelector is set to only pick standard definition or lower
+  //  - a good way of saving our user's data at the expense of quality. Lastly,
+//  we pass our trackSelector to our builder so that it is used when building the SimpleExoPlayer instance.
   private void initializePlayer() {
-    player = ExoPlayerFactory.newSimpleInstance(this);
+
+    if (player == null) {
+      DefaultTrackSelector trackSelector = new DefaultTrackSelector(this);
+      trackSelector.setParameters(
+              trackSelector.buildUponParameters().setMaxVideoSizeSd());
+      player = new SimpleExoPlayer.Builder(this)
+              .setTrackSelector(trackSelector)
+              .build();
+    }
     playerView.setPlayer(player);
 
-    Uri uri = Uri.parse(getString(R.string.media_url_mp4));
+    // change our URI to one which points to a DASH media source:
+    Uri uri = Uri.parse(getString(R.string.media_url_dash));
     MediaSource mediaSource = buildMediaSource(uri);
 
     player.setPlayWhenReady(playWhenReady);
@@ -122,23 +138,27 @@ public class PlayerActivity extends AppCompatActivity {
    * container formats using a variety of Extractor classes.
    *
    *
-   * playlist can be created using a ConcatenatingMediaSource
+   *
+   *
+   * DASH is a widely used adaptive streaming format. To stream DASH content we need to create a DashMediaSource.
+   */
+
+  /**
+   *
+   * We are now streaming DASH and using available bandwidth to selecting tracks. To see this in action you can:
+   *
+   * Tap double shift to open up Search Everywhere
+   * Find the AdaptiveTrackSelection class
+   * In the class find updateSelectedTrack - this method will be called when the track is updated
+   * Put a breakpoint on the line if (selectedIndex == currentSelectedIndex
+   * Start your app in debug mode.
+   * Watch how the breakpoint is hit each time the track selector needs to decide which track to use.
    */
   private MediaSource buildMediaSource(Uri uri) {
-    // These factories are used to construct two media sources below
     DataSource.Factory dataSourceFactory =
             new DefaultDataSourceFactory(this, "exoplayer-codelab");
-    ProgressiveMediaSource.Factory mediaSourceFactory =
-            new ProgressiveMediaSource.Factory(dataSourceFactory);
-
-    // Create a media source using the supplied URI
-    MediaSource mediaSource1 = mediaSourceFactory.createMediaSource(uri);
-
-    // Additionally create a media source using an MP3
-    Uri audioUri = Uri.parse(getString(R.string.media_url_mp3));
-    MediaSource mediaSource2 = mediaSourceFactory.createMediaSource(audioUri);
-
-    return new ConcatenatingMediaSource(mediaSource1, mediaSource2);
+    DashMediaSource.Factory mediaSourceFactory = new DashMediaSource.Factory(dataSourceFactory);
+    return mediaSourceFactory.createMediaSource(uri);
   }
 
   @SuppressLint("InlinedApi")
